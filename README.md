@@ -1,4 +1,4 @@
 # Tp3Android
 
-# #Liste des fonctionnalités
+## Liste des fonctionnalités
 
