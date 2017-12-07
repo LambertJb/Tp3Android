@@ -1,13 +1,19 @@
 package io.gresse.hugo.tp2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -17,6 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Display a simple chat connected to Firebase
@@ -25,9 +32,10 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
 
     public static final String TAG = MainActivity.class.getSimpleName();
 
-    EditText       mInputEditText;
-    Button         mSendButton;
+    EditText      mInputEditText;
+    ImageButton mSendButton;
     MessageAdapter mMessageAdapter;
+    User user;
 
     DatabaseReference mDatabaseReference;
 
@@ -40,13 +48,25 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
         mInputEditText = findViewById(R.id.inputEditText);
         mSendButton = findViewById(R.id.sendButton);
 
+        user = UserStorage.getUser(this);
+
+        if(user.nom == UserStorage.USER_NOTDEFINED && user.email == UserStorage.USER_NOTDEFINED ) {
+            Intent intent = new Intent(this, NamePickerActivity.class);
+            this.startActivity(intent);
+            finish();
+            return;
+        }
+
+
+
         mMessageAdapter = new MessageAdapter(new ArrayList<Message>());
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        linearLayoutManager.setStackFromEnd(true);
+        recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(mMessageAdapter);
 
         connectAndListenToFirebase();
-
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -55,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
                 }
                 DatabaseReference newData = mDatabaseReference.push();
                 newData.setValue(
-                        new Message(mInputEditText.getText().toString(), "Hugo", 0L));
+                        new Message(mInputEditText.getText().toString(), user.email, user.nom, 0L));
                 mInputEditText.setText("");
             }
         });
@@ -87,5 +107,31 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
     @Override
     public void onCancelled(DatabaseError databaseError) {
 
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            if(UserStorage.delete(this)){
+                Intent intent = new Intent(this, NamePickerActivity.class);
+                this.startActivity(intent);
+                finish();
+                return true;
+            }
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 }
